@@ -98,16 +98,39 @@ func (j *Jira) SearchWithFields(fields string, query string) ([]*Issue, error) {
 	issueList := IssueList{}
 	uerr := json.Unmarshal(issueData, &issueList)
 	if uerr != nil {
-		fmt.Println("Issue error: ", uerr)
+		fmt.Println("Issue search error: ", uerr)
 		return nil, uerr
 	}
 
 	return issueList.Issues, nil
 }
 
+func (j *Jira) Issue(key string) (*Issue, error) {
+	useFields := "id,summary"
+
+	params := map[string]string{
+		"fields": useFields,
+	}
+
+	urlStr := j.buildUrl("issue/"+key, params)
+	issueData, err := j.execRequest(MGET, urlStr, nil)
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return nil, err
+	}
+
+	issue := Issue{}
+	uerr := json.Unmarshal(issueData, &issue)
+	if uerr != nil {
+		fmt.Println("Issue error: ", uerr)
+		return nil, uerr
+	}
+
+	return &issue, nil
+}
+
 func (j *Jira) ApiRequest(method, path string, params map[string]interface{}) ([]byte, error) {
 	url := j.baseurl + REST_PATH + path
-	//fmt.Println("URL: ", url)
 	return j.execRequest(method, url, nil)
 }
 
