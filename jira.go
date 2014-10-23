@@ -19,11 +19,11 @@ const MGET = "GET"
 
 // Jira is a client object with functions to make reuqests to the jira api
 type Jira struct {
-	client     *http.Client
-	baseurl    string
-	auth       Auth
-	maxResults int
-	Issues     *IssueService
+	client        *http.Client
+	baseurl       string
+	auth          Auth
+	maxResults    int
+	IssuesService *IssueService
 }
 
 // Auth contains username and password attributes used for api request authentication
@@ -59,7 +59,7 @@ func NewJiraClient(baseurl, username, password string, maxResults int) *Jira {
 		maxResults = DEFAULT_MAX_RESULTS
 	}
 	j := &Jira{client: &http.Client{}, baseurl: baseurl, auth: Auth{username, password}, maxResults: maxResults}
-	j.Issues = &IssueService{j}
+	j.IssuesService = &IssueService{j}
 
 	return j
 }
@@ -105,8 +105,13 @@ func (j *Jira) SearchWithFields(fields string, query string) ([]*Issue, error) {
 	return issueList.Issues, nil
 }
 
-func (j *Jira) Issue(key string) (*Issue, error) {
+// Issue loads the jira data for a single jira issue key, with the specified issue fields if the fields param is set
+func (j *Jira) Issue(key string, fields []string) (*Issue, error) {
 	useFields := "id,summary"
+
+	if nil != fields && len(fields) > 0 {
+		useFields = flatten(fields)
+	}
 
 	params := map[string]string{
 		"fields": useFields,
@@ -127,6 +132,30 @@ func (j *Jira) Issue(key string) (*Issue, error) {
 	}
 
 	return &issue, nil
+}
+
+// Issues loads the jira data for all the issue keys provided specifying the fields to include if the fields param is set
+func (j *Jira) Issues(keys []string, fields []string) ([]*Issue, error) {
+	useFields := "id,summary"
+
+	if nil != fields && len(fields) > 0 {
+		useFields = flatten(fields)
+	}
+
+	// build a query with all the issue keys
+	qry := ""
+	fmt.Println("keys: ", keys)
+	for i := 0; i < len(keys); i++ {
+		if i == len(keys)-1 {
+			qry = qry + fmt.Sprintf("id = %s", keys[i])
+		} else {
+			qry = qry + fmt.Sprintf("id = %s or ", keys[i])
+		}
+	}
+
+	fmt.Println("QRY: ", qry)
+
+	return j.SearchWithFields(useFields, qry)
 }
 
 func (j *Jira) ApiRequest(method, path string, params map[string]interface{}) ([]byte, error) {
@@ -191,4 +220,12 @@ func (j *Jira) execRequest(method, aUrl string, params map[string]interface{}) (
 	}
 
 	return data, nil
+}
+
+func flatten(list []string) string {
+	str := ""
+	for _, v := range list {
+		str = str + "," + v
+	}
+	return str
 }
