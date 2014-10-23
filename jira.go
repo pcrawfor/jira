@@ -67,16 +67,16 @@ func NewJiraClient(baseurl, username, password string, maxResults int) *Jira {
 // "search?jql=status=reviewed OR status=released OR status='ready for release' OR status='qa review'&validateQuery=true&fields=id,summary"
 // Search runs an arbitrary search request against the Jira API for Issues
 func (j *Jira) Search(query string) ([]*Issue, error) {
-	return j.SearchWithFields("", query)
+	return j.SearchWithFields(query, nil)
 }
 
-func (j *Jira) SearchWithFields(fields string, query string) ([]*Issue, error) {
+func (j *Jira) SearchWithFields(query string, fields []string) ([]*Issue, error) {
 	max := strconv.Itoa(j.maxResults)
 
 	useFields := "id,summary"
 
-	if len(fields) > 0 {
-		useFields = fields
+	if nil != fields && len(fields) > 0 {
+		useFields = flatten(fields)
 	}
 
 	params := map[string]string{
@@ -136,12 +136,6 @@ func (j *Jira) Issue(key string, fields []string) (*Issue, error) {
 
 // Issues loads the jira data for all the issue keys provided specifying the fields to include if the fields param is set
 func (j *Jira) Issues(keys []string, fields []string) ([]*Issue, error) {
-	useFields := "id,summary"
-
-	if nil != fields && len(fields) > 0 {
-		useFields = flatten(fields)
-	}
-
 	// build a query with all the issue keys
 	qry := ""
 	fmt.Println("keys: ", keys)
@@ -155,7 +149,7 @@ func (j *Jira) Issues(keys []string, fields []string) ([]*Issue, error) {
 
 	fmt.Println("QRY: ", qry)
 
-	return j.SearchWithFields(useFields, qry)
+	return j.SearchWithFields(qry, fields)
 }
 
 func (j *Jira) ApiRequest(method, path string, params map[string]interface{}) ([]byte, error) {
