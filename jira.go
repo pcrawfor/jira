@@ -32,25 +32,8 @@ type Auth struct {
 	Password string
 }
 
-type Issue struct {
-	Id     string                 `json:"id,omitempty"`
-	Key    string                 `json:"key,omitempty"`
-	Self   string                 `json:"self,omitempty"`
-	Expand string                 `json:"expand,omitempty"`
-	Fields map[string]interface{} `json:"fields,omitempty"`
-}
-
 func (i *Issue) String() string {
 	return "Id: " + i.Id + " Key: " + i.Key + " self: " + i.Self
-}
-
-type IssueList struct {
-	Expand     string   `json:"expand,omitempty"`
-	StartAt    int      `json:"starts_at,omitempty"`
-	MaxResults int      `json:"max_results,omitempty"`
-	Total      int      `json:"total,omitempty"`
-	Issues     []*Issue `json:"issues,omitempty"`
-	//Pagination *Pagination
 }
 
 // NewJiraClient returns an instance of the Jira api client

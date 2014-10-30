@@ -9,6 +9,23 @@ type IssueService struct {
 	client *Jira
 }
 
+type Issue struct {
+	Id     string                 `json:"id,omitempty"`
+	Key    string                 `json:"key,omitempty"`
+	Self   string                 `json:"self,omitempty"`
+	Expand string                 `json:"expand,omitempty"`
+	Fields map[string]interface{} `json:"fields,omitempty"`
+}
+
+type IssueList struct {
+	Expand     string   `json:"expand,omitempty"`
+	StartAt    int      `json:"starts_at,omitempty"`
+	MaxResults int      `json:"max_results,omitempty"`
+	Total      int      `json:"total,omitempty"`
+	Issues     []*Issue `json:"issues,omitempty"`
+	//Pagination *Pagination
+}
+
 type TransitionList struct {
 	Expand      string       `json:"expand,omitempty"`
 	Transitions []Transition `json:"transitions,omitempty"`
