@@ -11,11 +11,11 @@ import (
 	"strconv"
 )
 
-const REST_PATH = "/rest/api/2/"
-const DEFAULT_MAX_RESULTS = 200
+const restPath = "/rest/api/2/"
+const defaultMaxResults = 200
 
-const MPOST = "POST"
-const MGET = "GET"
+const mPost = "POST"
+const mGet = "GET"
 
 // Jira is a client object with functions to make reuqests to the jira api
 type Jira struct {
@@ -39,7 +39,7 @@ func (i *Issue) String() string {
 // NewJiraClient returns an instance of the Jira api client
 func NewJiraClient(baseurl, username, password string, maxResults int) *Jira {
 	if maxResults == -1 {
-		maxResults = DEFAULT_MAX_RESULTS
+		maxResults = defaultMaxResults
 	}
 	j := &Jira{client: &http.Client{}, baseurl: baseurl, auth: Auth{username, password}, maxResults: maxResults}
 	j.IssuesService = &IssueService{j}
@@ -48,11 +48,13 @@ func NewJiraClient(baseurl, username, password string, maxResults int) *Jira {
 }
 
 // "search?jql=status=reviewed OR status=released OR status='ready for release' OR status='qa review'&validateQuery=true&fields=id,summary"
+
 // Search runs an arbitrary search request against the Jira API for Issues
 func (j *Jira) Search(query string) ([]*Issue, error) {
 	return j.SearchWithFields(query, nil)
 }
 
+// SearchWithFields runs an arbitrary search request and builds the set of fields to be returned by the response as defined in the fields param
 func (j *Jira) SearchWithFields(query string, fields []string) ([]*Issue, error) {
 	max := strconv.Itoa(j.maxResults)
 
@@ -69,7 +71,7 @@ func (j *Jira) SearchWithFields(query string, fields []string) ([]*Issue, error)
 		"maxResults":    max,
 	}
 
-	urlStr := j.buildUrl("search", params)
+	urlStr := j.buildURL("search", params)
 
 	issueData, err := j.execRequest(MGET, urlStr, nil)
 	if err != nil {
@@ -100,7 +102,7 @@ func (j *Jira) Issue(key string, fields []string) (*Issue, error) {
 		"fields": useFields,
 	}
 
-	urlStr := j.buildUrl("issue/"+key, params)
+	urlStr := j.buildURL("issue/"+key, params)
 	issueData, err := j.execRequest(MGET, urlStr, nil)
 	if err != nil {
 		fmt.Println("Error: ", err)
@@ -135,35 +137,36 @@ func (j *Jira) Issues(keys []string, fields []string) ([]*Issue, error) {
 	return j.SearchWithFields(qry, fields)
 }
 
-func (j *Jira) ApiRequest(method, path string, params map[string]interface{}) ([]byte, error) {
-	url := j.baseurl + REST_PATH + path
+// apiRequest builds a request for the jira API
+func (j *Jira) apiRequest(method, path string, params map[string]interface{}) ([]byte, error) {
+	url := j.baseurl + restPath + path
 	return j.execRequest(method, url, nil)
 }
 
-//buildUrl creates a url for the given path and url parameters
-func (j *Jira) buildUrl(path string, params map[string]string) string {
-	var aUrl *url.URL
-	aUrl, err := url.Parse(j.baseurl)
+//buildURL creates a url for the given path and url parameters
+func (j *Jira) buildURL(path string, params map[string]string) string {
+	var aURL *url.URL
+	aURL, err := url.Parse(j.baseurl)
 	if err != nil {
 		fmt.Println("Error: ", err)
 	}
 
-	aUrl.Path += REST_PATH + path
+	aURL.Path += restPath + path
 	parameters := url.Values{}
 	for k, v := range params {
 		parameters.Add(k, v)
 	}
 
-	aUrl.RawQuery = parameters.Encode()
-	return aUrl.String()
+	aURL.RawQuery = parameters.Encode()
+	return aURL.String()
 }
 
 // execRequest executes an arbitrary request for the given method and url returning the contents of the response in []byte or an error
-func (j *Jira) execRequest(method, aUrl string, params map[string]interface{}) ([]byte, error) {
+func (j *Jira) execRequest(method, aURL string, params map[string]interface{}) ([]byte, error) {
 
 	// json string encode the params for the POST body if there are any
 	var body io.Reader
-	if params != nil && method == MPOST {
+	if params != nil && method == mPost {
 		b, err := json.Marshal(params)
 		if err != nil {
 			fmt.Println("Json error: ", err)
@@ -172,7 +175,7 @@ func (j *Jira) execRequest(method, aUrl string, params map[string]interface{}) (
 		fmt.Println("BODY: ", string(b))
 	}
 
-	req, err := http.NewRequest(method, aUrl, body)
+	req, err := http.NewRequest(method, aURL, body)
 	if err != nil {
 		fmt.Println("execRequest error: ", err)
 		return nil, err
