@@ -3,7 +3,6 @@ package jira
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -195,7 +194,7 @@ func (j *Jira) execRequest(method, aURL string, params map[string]interface{}) (
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode > 399 {
-		return nil, errors.New(fmt.Sprintf("HTTP Error Status returned: %d", resp.StatusCode))
+		return nil, fmt.Errorf("HTTP Error Status returned: %d", resp.StatusCode)
 	}
 
 	data, derr := ioutil.ReadAll(resp.Body)
