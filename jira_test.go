@@ -45,3 +45,31 @@ func TestIssue(t *testing.T) {
 		t.Error("Error expected issue Key to be ABC-01 got:", i.Key)
 	}
 }
+
+func TestIssues(t *testing.T) {
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		val := `{"expand":"schema,names","startAt":0,"maxResults":100,"total":3,"issues":[
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1234","self":"https://test.atlassian.net/rest/api/2/issue/1234","key":"ABC-01","fields":{"summary":"This is a test"}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1235","self":"https://test.atlassian.net/rest/api/2/issue/1235","key":"ABC-02","fields":{"summary":"This is another test"}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1236","self":"https://test.atlassian.net/rest/api/2/issue/1236","key":"ABC-03","fields":{"summary":"This is also test"}}]}`
+		fmt.Fprintln(w, val)
+	}))
+	defer ts.Close()
+
+	fmt.Println("ts.URL:", ts.URL)
+	c := NewJiraClient(ts.URL, "foo", "bar", 100)
+	issues, err := c.Issues([]string{"ABC-01", "ABC-02", "ABC-03"}, nil)
+	if err != nil {
+		t.Error("Error loading issue:", err)
+	}
+
+	if len(issues) != 3 {
+		t.Error("Recv'd the wrong number of issues in return")
+	}
+
+	if issues[0].Key != "ABC-01" {
+		t.Error("Error expected first key to be ABC-01 got:", issues[0].Key)
+	}
+
+}
