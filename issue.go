@@ -64,13 +64,13 @@ func (i *IssueService) Transition(key, transitionID string) ([]byte, error) {
 		},
 	}
 
-	return i.client.execRequest(MPOST, i.client.baseurl+url, params)
+	return i.client.execRequest(mPost, i.client.baseurl+url, params)
 }
 
 // GetTransitions loads the available transitions for a given issue key
 func (i *IssueService) GetTransitions(key string) (*TransitionList, error) {
 	url := "issue/" + key + "/transitions?expand=transitions.fields"
-	b, e := i.client.apiRequest(MGET, url, nil)
+	b, e := i.client.apiRequest(mGet, url, nil)
 	if e != nil {
 		return nil, e
 	}

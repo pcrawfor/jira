@@ -3,6 +3,7 @@ package jira
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -33,7 +34,7 @@ type Auth struct {
 }
 
 func (i *Issue) String() string {
-	return "Id: " + i.Id + " Key: " + i.Key + " self: " + i.Self
+	return "Id: " + i.ID + " Key: " + i.Key + " self: " + i.Self
 }
 
 // NewJiraClient returns an instance of the Jira api client
@@ -73,7 +74,7 @@ func (j *Jira) SearchWithFields(query string, fields []string) ([]*Issue, error)
 
 	urlStr := j.buildURL("search", params)
 
-	issueData, err := j.execRequest(MGET, urlStr, nil)
+	issueData, err := j.execRequest(mGet, urlStr, nil)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return nil, err
@@ -103,7 +104,7 @@ func (j *Jira) Issue(key string, fields []string) (*Issue, error) {
 	}
 
 	urlStr := j.buildURL("issue/"+key, params)
-	issueData, err := j.execRequest(MGET, urlStr, nil)
+	issueData, err := j.execRequest(mGet, urlStr, nil)
 	if err != nil {
 		fmt.Println("Error: ", err)
 		return nil, err
@@ -192,6 +193,10 @@ func (j *Jira) execRequest(method, aURL string, params map[string]interface{}) (
 		return nil, rerr
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode > 399 {
+		return nil, errors.New(fmt.Sprintf("HTTP Error Status returned: %d", resp.StatusCode))
+	}
 
 	data, derr := ioutil.ReadAll(resp.Body)
 	if derr != nil {
