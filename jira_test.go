@@ -26,7 +26,6 @@ func TestIssue(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	fmt.Println("ts.URL:", ts.URL)
 	c := NewJiraClient(ts.URL, "foo", "bar", 100)
 	i, err := c.Issue("abc", nil)
 	if err != nil {
@@ -57,7 +56,6 @@ func TestIssues(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	fmt.Println("ts.URL:", ts.URL)
 	c := NewJiraClient(ts.URL, "foo", "bar", 100)
 	issues, err := c.Issues([]string{"ABC-01", "ABC-02", "ABC-03"}, nil)
 	if err != nil {
@@ -72,4 +70,27 @@ func TestIssues(t *testing.T) {
 		t.Error("Error expected first key to be ABC-01 got:", issues[0].Key)
 	}
 
+}
+
+func TestSearch(t *testing.T) {
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		val := `{"expand":"schema,names","startAt":0,"maxResults":100,"total":3,"issues":[
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1234","self":"https://test.atlassian.net/rest/api/2/issue/1234","key":"ABC-01","fields":{"summary":"This is a test"}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1235","self":"https://test.atlassian.net/rest/api/2/issue/1235","key":"ABC-02","fields":{"summary":"This is another test"}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1236","self":"https://test.atlassian.net/rest/api/2/issue/1236","key":"ABC-03","fields":{"summary":"This is also test"}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1237","self":"https://test.atlassian.net/rest/api/2/issue/1237","key":"ABC-04","fields":{"summary":"This is more tests"}}]}`
+		fmt.Fprintln(w, val)
+	}))
+	defer ts.Close()
+
+	c := NewJiraClient(ts.URL, "foo", "bar", 100)
+	issues, err := c.Search("status=reviewed")
+	if err != nil {
+		t.Error("Error loading issue:", err)
+	}
+
+	if len(issues) != 4 {
+		t.Error("Recv'd the wrong number of issues in return")
+	}
 }
