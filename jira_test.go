@@ -21,6 +21,7 @@ func TestBuildUrl(t *testing.T) {
 // TestIssue verifies that we can handle a expected response from the Jira API - all bets are off if they change what they send us though :)
 func TestIssue(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		checkAuth(t, r)
 		val := `{"expand":"renderedFields,names,schema,transitions,operations,editmeta,changelog","id":"1234","self":"https://test.atlassian.net/rest/api/2/issue/1234","key":"ABC-01","fields":{"summary":"This is a test"}}`
 		fmt.Fprintln(w, val)
 	}))
@@ -48,6 +49,7 @@ func TestIssue(t *testing.T) {
 func TestIssues(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		checkAuth(t, r)
 		val := `{"expand":"schema,names","startAt":0,"maxResults":100,"total":3,"issues":[
 		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1234","self":"https://test.atlassian.net/rest/api/2/issue/1234","key":"ABC-01","fields":{"summary":"This is a test"}},
 		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1235","self":"https://test.atlassian.net/rest/api/2/issue/1235","key":"ABC-02","fields":{"summary":"This is another test"}},
@@ -75,6 +77,7 @@ func TestIssues(t *testing.T) {
 func TestSearch(t *testing.T) {
 
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		checkAuth(t, r)
 		val := `{"expand":"schema,names","startAt":0,"maxResults":100,"total":3,"issues":[
 		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1234","self":"https://test.atlassian.net/rest/api/2/issue/1234","key":"ABC-01","fields":{"summary":"This is a test"}},
 		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1235","self":"https://test.atlassian.net/rest/api/2/issue/1235","key":"ABC-02","fields":{"summary":"This is another test"}},
@@ -92,5 +95,15 @@ func TestSearch(t *testing.T) {
 
 	if len(issues) != 4 {
 		t.Error("Recv'd the wrong number of issues in return")
+	}
+}
+
+func checkAuth(t *testing.T, r *http.Request) {
+	u, p, ok := r.BasicAuth()
+	if !ok {
+		t.Error("Error loading basic auth")
+	}
+	if u != "foo" || p != "bar" {
+		t.Error("Auth creds invalid")
 	}
 }

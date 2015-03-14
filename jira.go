@@ -123,7 +123,6 @@ func (j *Jira) Issue(key string, fields []string) (*Issue, error) {
 func (j *Jira) Issues(keys []string, fields []string) ([]*Issue, error) {
 	// build a query with all the issue keys
 	qry := ""
-	fmt.Println("keys: ", keys)
 	for i := 0; i < len(keys); i++ {
 		if i == len(keys)-1 {
 			qry = qry + fmt.Sprintf("id = %s", keys[i])
@@ -131,8 +130,6 @@ func (j *Jira) Issues(keys []string, fields []string) ([]*Issue, error) {
 			qry = qry + fmt.Sprintf("id = %s or ", keys[i])
 		}
 	}
-
-	fmt.Println("QRY: ", qry)
 
 	return j.SearchWithFields(qry, fields)
 }
@@ -172,7 +169,6 @@ func (j *Jira) execRequest(method, aURL string, params map[string]interface{}) (
 			fmt.Println("Json error: ", err)
 		}
 		body = bytes.NewBuffer(b)
-		fmt.Println("BODY: ", string(b))
 	}
 
 	req, err := http.NewRequest(method, aURL, body)
@@ -183,8 +179,6 @@ func (j *Jira) execRequest(method, aURL string, params map[string]interface{}) (
 
 	req.Header.Add("Content-Type", "application/json")
 	req.SetBasicAuth(j.auth.Username, j.auth.Password)
-
-	fmt.Println("URL: ", req.URL)
 
 	resp, rerr := j.client.Do(req)
 	if rerr != nil {
