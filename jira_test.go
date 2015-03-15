@@ -58,7 +58,7 @@ func TestIssues(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewJiraClient(ts.URL, "foo", "bar", 100)
+	c := NewJiraClient(ts.URL, "foo", "bar", 3)
 	issues, err := c.Issues([]string{"ABC-01", "ABC-02", "ABC-03"}, nil)
 	if err != nil {
 		t.Error("Error loading issue:", err)
@@ -87,7 +87,7 @@ func TestSearch(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	c := NewJiraClient(ts.URL, "foo", "bar", 100)
+	c := NewJiraClient(ts.URL, "foo", "bar", 4)
 	issues, err := c.Search("status=reviewed")
 	if err != nil {
 		t.Error("Error loading issue:", err)
@@ -95,6 +95,39 @@ func TestSearch(t *testing.T) {
 
 	if len(issues) != 4 {
 		t.Error("Recv'd the wrong number of issues in return")
+	}
+}
+
+func TestSearchWithFields(t *testing.T) {
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		checkAuth(t, r)
+		val := `{"expand":"schema,names","startAt":0,"maxResults":5,"total":939,"issues":[
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1234","self":"https://test.atlassian.net/rest/api/2/issue/1234","key":"ABC-01","fields":{"summary":"Test Summary 1","project":{"self":"https://test.atlassian.net/rest/api/2/project/123","id":"10502","key":"ABC","name":"A B C","avatarUrls":{"48x48":"https://test.atlassian.net/secure/projectavatar?avatarId=10011","24x24":"https://test.atlassian.net/secure/projectavatar?size=small&avatarId=10011","16x16":"https://test.atlassian.net/secure/projectavatar?size=xsmall&avatarId=1","32x32":"https://test.atlassian.net/secure/projectavatar?size=medium&avatarId=1"}}}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1235","self":"https://test.atlassian.net/rest/api/2/issue/1235","key":"ABC-02","fields":{"summary":"Test Summary 2","project":{"self":"https://test.atlassian.net/rest/api/2/project/123","id":"10502","key":"ABC","name":"A B C","avatarUrls":{"48x48":"https://test.atlassian.net/secure/projectavatar?avatarId=10011","24x24":"https://test.atlassian.net/secure/projectavatar?size=small&avatarId=10011","16x16":"https://test.atlassian.net/secure/projectavatar?size=xsmall&avatarId=1","32x32":"https://test.atlassian.net/secure/projectavatar?size=medium&avatarId=1"}}}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1236","self":"https://test.atlassian.net/rest/api/2/issue/1236","key":"ABC-03","fields":{"summary":"Test Summary 3","project":{"self":"https://test.atlassian.net/rest/api/2/project/123","id":"10502","key":"ABC","name":"A B C","avatarUrls":{"48x48":"https://test.atlassian.net/secure/projectavatar?avatarId=10011","24x24":"https://test.atlassian.net/secure/projectavatar?size=small&avatarId=10011","16x16":"https://test.atlassian.net/secure/projectavatar?size=xsmall&avatarId=1","32x32":"https://test.atlassian.net/secure/projectavatar?size=medium&avatarId=1"}}}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1237","self":"https://test.atlassian.net/rest/api/2/issue/1237","key":"ABC-04","fields":{"summary":"Test Summary 4","project":{"self":"https://test.atlassian.net/rest/api/2/project/123","id":"10502","key":"ABC","name":"A B C","avatarUrls":{"48x48":"https://test.atlassian.net/secure/projectavatar?avatarId=10011","24x24":"https://test.atlassian.net/secure/projectavatar?size=small&avatarId=10011","16x16":"https://test.atlassian.net/secure/projectavatar?size=xsmall&avatarId=1","32x32":"https://test.atlassian.net/secure/projectavatar?size=medium&avatarId=1"}}}},
+		{"expand":"operations,editmeta,changelog,transitions,renderedFields","id":"1238","self":"https://test.atlassian.net/rest/api/2/issue/1238","key":"ABC-05","fields":{"summary":"Test Summary 5","project":{"self":"https://test.atlassian.net/rest/api/2/project/123","id":"10502","key":"ABC","name":"A B C","avatarUrls":{"48x48":"https://test.atlassian.net/secure/projectavatar?avatarId=10011","24x24":"https://test.atlassian.net/secure/projectavatar?size=small&avatarId=10011","16x16":"https://test.atlassian.net/secure/projectavatar?size=xsmall&avatarId=1","32x32":"https://test.atlassian.net/secure/projectavatar?size=medium&avatarId=1"}}}}]}`
+		fmt.Fprintln(w, val)
+	}))
+	defer ts.Close()
+
+	c := NewJiraClient(ts.URL, "foo", "bar", 5)
+	issues, err := c.SearchWithFields("status=reviewed", []string{"id", "summary", "project"})
+	if err != nil {
+		t.Error("Error loading issue:", err)
+	}
+
+	if len(issues) != 5 {
+		t.Error("Recv'd the wrong number of issues in return")
+	}
+
+	if issues[0].Fields["summary"] == nil {
+		t.Error("Expected summary field to be populated")
+	}
+
+	if issues[0].Fields["project"] == nil {
+		t.Error("Expected project field to be populated")
 	}
 }
 
